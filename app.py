@@ -72,41 +72,41 @@ def main():
     """
     Main function to demonstrate the LLM utilities.
     """
-    logger.info("=== LLM Utilities Demo ===")
+    # logger.info("=== LLM Utilities Demo ===")
     
-    # Test basic LLM functionality
-    logger.info("\n1. Testing basic LLM functionality:")
-    llm = get_llm()
+    # # Test basic LLM functionality
+    # logger.info("\n1. Testing basic LLM functionality:")
+    # llm = get_llm()
     
-    messages = [
-        SystemMessage(content="You are a helpful assistant."),
-        HumanMessage(content="What is the capital of France?")
-    ]
+    # messages = [
+    #     SystemMessage(content="You are a helpful assistant."),
+    #     HumanMessage(content="What is the capital of France?")
+    # ]
     
-    response = llm.invoke(messages)
-    logger.info(f"Response: {response.content}")
+    # response = llm.invoke(messages)
+    # logger.info(f"Response: {response.content}")
     
-    # Test LangGraph integration
-    logger.info("\n2. Testing LangGraph integration:")
-    graph = create_simple_chat_graph()
+    # # Test LangGraph integration
+    # logger.info("\n2. Testing LangGraph integration:")
+    # graph = create_simple_chat_graph()
     
-    # Create initial state
-    initial_state = {
-        "messages": [
-            SystemMessage(content="You are a helpful assistant."),
-            HumanMessage(content="Tell me a short joke.")
-        ],
-        "response": "",
-        "search_results": "",
-        "user_query": ""
-    }
+    # # Create initial state
+    # initial_state = {
+    #     "messages": [
+    #         SystemMessage(content="You are a helpful assistant."),
+    #         HumanMessage(content="Tell me a short joke.")
+    #     ],
+    #     "response": "",
+    #     "search_results": "",
+    #     "user_query": ""
+    # }
     
-    # Run the graph
-    result = graph.invoke(initial_state)
-    logger.info(f"Graph Response: {result['response']}")
+    # # Run the graph
+    # result = graph.invoke(initial_state)
+    # logger.info(f"Graph Response: {result['response']}")
     
-    # Test web search functionality
-    logger.info("\n3. Testing web search functionality:")
+    # # Test web search functionality
+    # logger.info("\n3. Testing web search functionality:")
     web_search_graph = create_web_search_graph()
     
     # Create initial state for web search

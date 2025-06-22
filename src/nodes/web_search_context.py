@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import TypedDict, Annotated, List
 from langchain_core.messages import BaseMessage, HumanMessage
 from src.utils import get_llm
@@ -13,6 +14,19 @@ class GraphState(TypedDict):
     user_query: Annotated[str, "The original user query"]
 
 
+def load_instructions():
+    """
+    Load instructions from the web-search-instructions.txt file in src/prompts/.
+    """
+    instructions_path = os.path.join(os.path.dirname(__file__), "..", "prompts", "web-search-instructions.txt")
+    try:
+        with open(instructions_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        logger.error(f"Instructions file not found at {instructions_path}")
+        return "You are a helpful assistant. Please provide a comprehensive answer to the user's query."
+
+
 def chat_with_search_node(state: GraphState) -> GraphState:
     """
     Generate response using LLM with web search results as context.
@@ -22,18 +36,12 @@ def chat_with_search_node(state: GraphState) -> GraphState:
     search_results = state["search_results"]
     user_query = state["user_query"]
     
-    # Create enhanced prompt with search results
-    enhanced_prompt = f"""
-You are a helpful assistant that provides accurate information based on web search results.
-
-User Query: {user_query}
-
-{search_results}
-
-Based on the web search results above, please provide a comprehensive and accurate answer to the user's query. If the search results contain relevant information, use it to support your response. If the search results are not relevant or insufficient, acknowledge this and provide the best information you can based on your training data.
-
-Please structure your response clearly and cite information from the search results when appropriate.
-"""
+    # Load instructions from file and replace placeholders
+    instructions_template = load_instructions()
+    enhanced_prompt = instructions_template.format(
+        user_query=user_query,
+        search_results=search_results
+    )
     
     # Add the enhanced prompt to messages
     enhanced_messages = messages + [HumanMessage(content=enhanced_prompt)]

@@ -33,7 +33,7 @@ def web_search_node(state: GraphState) -> GraphState:
         
         # Extract the response text
         search_results = response.output_text if hasattr(response, 'output_text') else "No search results found for this query."
-        
+        logger.info(f"Raw Search results: {search_results}")
         logger.info(f"OpenAI web search completed successfully")
         
     except Exception as e:
