@@ -1,6 +1,6 @@
 import logging
+import json
 import plotly.graph_objects as go
-import plotly.io as pio
 from typing import TypedDict, Annotated, List, Any
 from langchain_core.messages import BaseMessage
 
@@ -16,36 +16,49 @@ class GraphState(TypedDict):
     formatted_data: Annotated[str, "Formatted data for graphing"]
     graph_object: Annotated[Any, "The rendered graph object"]
 
+def to_float(value: Any) -> float:
+    """Safely converts a value to a float, handling strings with commas."""
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.replace(',', ''))
+        except (ValueError, TypeError):
+            return 0.0
+    return 0.0
 
 def parse_data_for_graph(formatted_data: str):
     """
-    Simple parser to extract data from formatted string.
-    Assumes format: column names on first line, data on subsequent lines.
+    Parses a JSON string to extract data for graphing.
     """
-    lines = formatted_data.strip().split('\n')
-    if len(lines) < 2:
-        return None, None
-    
-    # Extract column names (first line)
-    columns = [col.strip() for col in lines[0].split(',')]
-    
-    # Extract data rows
-    data_rows = []
-    for line in lines[1:]:
-        if line.strip():
-            row = [val.strip() for val in line.split(',')]
+    try:
+        # Sanitize the string to handle potential markdown ```json ``` wrapper
+        if formatted_data.strip().startswith("```json"):
+            formatted_data = formatted_data.strip()[7:-3].strip()
+            
+        data = json.loads(formatted_data)
+        columns = data.get("col_names", [])
+        if not columns or len(columns) < 2:
+            return None, None
+
+        # Reconstruct data rows from the column-oriented JSON
+        # Assumes all value lists have the same length
+        num_rows = len(data.get(columns[0], {}).get("values", []))
+        data_rows = []
+        for i in range(num_rows):
+            row = [data.get(col, {}).get("values", [])[i] for col in columns]
             data_rows.append(row)
-    
-    return columns, data_rows
+
+        return columns, data_rows
+    except (json.JSONDecodeError, IndexError, KeyError) as e:
+        logger.error(f"Error parsing JSON data for graph: {formatted_data} | Error: {e}")
+        return None, None
 
 
 def create_graph(graph_type: str, formatted_data: str, user_query: str):
     """
     Create a Plotly graph based on the graph type and data.
     """
-    # Set a dark theme for Plotly
-    pio.templates.default = "plotly_dark"
-    
     columns, data_rows = parse_data_for_graph(formatted_data)
     
     if not columns or not data_rows:
@@ -57,49 +70,49 @@ def create_graph(graph_type: str, formatted_data: str, user_query: str):
             x=0.5, y=0.5, showarrow=False,
             font=dict(size=16)
         )
-        fig.update_layout(title=user_query, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        fig.update_layout(title=user_query)
         return fig
     
     try:
         if graph_type == "bar_graph":
             # Extract first two columns for x and y
-            x_values = [row[0] for row in data_rows if len(row) > 0]
-            y_values = [float(row[1]) if len(row) > 1 and row[1].replace('.', '').replace('-', '').isdigit() else 0 for row in data_rows]
+            x_values = [str(row[0]) if len(row) > 0 else "" for row in data_rows]
+            y_values = [to_float(row[1]) if len(row) > 1 else 0.0 for row in data_rows]
             
             fig = go.Figure(data=[
                 go.Bar(x=x_values, y=y_values)
             ])
-            fig.update_layout(title=user_query, xaxis_title=columns[0], yaxis_title=columns[1], paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            fig.update_layout(title=user_query, xaxis_title=columns[0], yaxis_title=columns[1])
             
         elif graph_type == "pie_chart":
             # Extract first two columns for labels and values
-            labels = [row[0] for row in data_rows if len(row) > 0]
-            values = [float(row[1]) if len(row) > 1 and row[1].replace('.', '').replace('-', '').isdigit() else 0 for row in data_rows]
+            labels = [str(row[0]) if len(row) > 0 else "" for row in data_rows]
+            values = [to_float(row[1]) if len(row) > 1 else 0.0 for row in data_rows]
             
             fig = go.Figure(data=[
                 go.Pie(labels=labels, values=values)
             ])
-            fig.update_layout(title=user_query, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            fig.update_layout(title=user_query)
             
         elif graph_type == "line_graph":
             # Extract first two columns for x and y
-            x_values = [row[0] for row in data_rows if len(row) > 0]
-            y_values = [float(row[1]) if len(row) > 1 and row[1].replace('.', '').replace('-', '').isdigit() else 0 for row in data_rows]
+            x_values = [str(row[0]) if len(row) > 0 else "" for row in data_rows]
+            y_values = [to_float(row[1]) if len(row) > 1 else 0.0 for row in data_rows]
             
             fig = go.Figure(data=[
                 go.Scatter(x=x_values, y=y_values, mode='lines+markers')
             ])
-            fig.update_layout(title=user_query, xaxis_title=columns[0], yaxis_title=columns[1], paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            fig.update_layout(title=user_query, xaxis_title=columns[0], yaxis_title=columns[1])
             
         else:
             # Default to bar graph
-            x_values = [row[0] for row in data_rows if len(row) > 0]
-            y_values = [float(row[1]) if len(row) > 1 and row[1].replace('.', '').replace('-', '').isdigit() else 0 for row in data_rows]
+            x_values = [str(row[0]) if len(row) > 0 else "" for row in data_rows]
+            y_values = [to_float(row[1]) if len(row) > 1 else 0.0 for row in data_rows]
             
             fig = go.Figure(data=[
                 go.Bar(x=x_values, y=y_values)
             ])
-            fig.update_layout(title=user_query, xaxis_title=columns[0], yaxis_title=columns[1], paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            fig.update_layout(title=user_query, xaxis_title=columns[0], yaxis_title=columns[1])
         
         return fig
         
@@ -113,7 +126,7 @@ def create_graph(graph_type: str, formatted_data: str, user_query: str):
             x=0.5, y=0.5, showarrow=False,
             font=dict(size=16)
         )
-        fig.update_layout(title=user_query, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        fig.update_layout(title=user_query)
         return fig
 
 

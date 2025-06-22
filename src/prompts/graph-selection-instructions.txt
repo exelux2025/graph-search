@@ -1,20 +1,29 @@
-You are a data visualization expert. Based on the given data, select the most appropriate graph type from the following options:
+You are a data visualization expert. Based on the given data in JSON format, select the most appropriate graph type from the following options.
 
-Available graph types:
-1. bar_graph - for categorical data with numerical values (e.g., countries vs values)
-2. stacked_bar_graph - for multiple categories per group
-3. pie_chart - for proportions/percentages of a whole
-4. line_graph - for time series or continuous data
-5. histogram - for distribution of numerical data
-6. scatterplot - for correlation between two numerical variables
+**Available graph types:**
+1.  `bar_graph` - for categorical data with numerical values.
+2.  `pie_chart` - for proportions/percentages of a whole.
+3.  `line_graph` - for time series or continuous data.
 
-Data: {data}
+**Data Format:**
+The data is provided in the following JSON format:
+```json
+{{
+    "col_names": ["column_name_1", "column_name_2"],
+    "column_name_1": {{ "dtype": "str", "values": ["a", "b"] }},
+    "column_name_2": {{ "dtype": "int", "values": [1, 2] }}
+}}
+```
 
-User Query: {user_query}
+**Analysis Instructions:**
+-   Analyze the data types (`dtype`) and the number of columns.
+-   A `pie_chart` is suitable if values represent parts of a whole.
+-   A `bar_graph` is suitable for comparing values across categories.
+-   A `line_graph` is best for data over time.
 
-Instructions:
-- Analyze the data structure and content
-- Consider the user's query context
-- Choose the graph type that best represents the data
-- Respond with ONLY the graph type name (e.g., "bar_graph", "pie_chart", etc.)
-- Do not include any explanation or additional text 
+**User Query:** {user_query}
+**Data:**
+{data}
+
+**Task:**
+Respond with ONLY the single, most appropriate graph type name (e.g., `bar_graph`, `pie_chart`). Do not include any explanation or additional text. 

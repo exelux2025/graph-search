@@ -14,6 +14,7 @@ class GraphState(TypedDict):
     user_query: Annotated[str, "The original user query"]
     selected_graph_type: Annotated[str, "The selected graph type"]
     formatted_data: Annotated[str, "Formatted data for graphing"]
+    graph_object: Annotated[str, "The graph object"]
 
 
 def load_graph_selection_instructions():
@@ -31,16 +32,16 @@ def load_graph_selection_instructions():
 
 def graph_selector_node(state: GraphState) -> GraphState:
     """
-    Select the best graph type based on the data using OpenAI.
+    Select the best graph type based on the formatted data using OpenAI.
     """
     llm = get_llm()
-    search_results = state["search_results"]
+    formatted_data = state["formatted_data"]
     user_query = state["user_query"]
     
     # Load instructions and replace placeholders
     instructions_template = load_graph_selection_instructions()
     prompt = instructions_template.format(
-        data=search_results,
+        data=formatted_data,
         user_query=user_query
     )
     
@@ -56,8 +57,9 @@ def graph_selector_node(state: GraphState) -> GraphState:
     return {
         "messages": state["messages"],
         "response": state["response"],
-        "search_results": search_results,
+        "search_results": state["search_results"],
         "user_query": user_query,
         "selected_graph_type": selected_graph_type,
-        "formatted_data": state.get("formatted_data", "")
+        "formatted_data": formatted_data,
+        "graph_object": state.get("graph_object", None)
     } 

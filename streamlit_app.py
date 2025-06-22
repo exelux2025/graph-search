@@ -4,13 +4,13 @@ import sys
 from dotenv import load_dotenv
 from langchain_core.messages import SystemMessage
 from langgraph.graph import StateGraph, END
+import json
 
 # Import from our modular structure
 from src.utils import get_llm
 from src.nodes.web_search import web_search_node, GraphState
 from src.nodes.web_search_context import chat_with_search_node
 from src.nodes.graph_selector import graph_selector_node
-from src.nodes.format_graph import format_graph_node
 from src.nodes.graph_renderer import graph_renderer_node
 
 # Configure logging
@@ -36,25 +36,23 @@ st.markdown("Search for data and automatically generate visualizations!")
 
 def create_full_workflow():
     """
-    Create the complete workflow with web search, graph selection, and rendering.
+    Create the complete workflow with web search, data cleaning, graph selection, and rendering.
     """
     workflow = StateGraph(GraphState)
     
     # Add all nodes
     workflow.add_node("web_search", web_search_node)
-    workflow.add_node("chat_with_search", chat_with_search_node)
+    workflow.add_node("data_formatter", chat_with_search_node)
     workflow.add_node("graph_selector", graph_selector_node)
-    workflow.add_node("format_graph", format_graph_node)
     workflow.add_node("graph_renderer", graph_renderer_node)
     
     # Set entry point
     workflow.set_entry_point("web_search")
     
     # Add edges
-    workflow.add_edge("web_search", "chat_with_search")
-    workflow.add_edge("chat_with_search", "graph_selector")
-    workflow.add_edge("graph_selector", "format_graph")
-    workflow.add_edge("format_graph", "graph_renderer")
+    workflow.add_edge("web_search", "data_formatter")
+    workflow.add_edge("data_formatter", "graph_selector")
+    workflow.add_edge("graph_selector", "graph_renderer")
     workflow.add_edge("graph_renderer", END)
     
     return workflow.compile()
@@ -109,10 +107,18 @@ def main():
                     
                     # Show raw data for debugging
                     with st.expander("🔍 Raw Data"):
-                        st.text("Search Results:")
+                        st.text("Raw Web Search Results:")
                         st.text(result["search_results"])
-                        st.text("\nFormatted Data:")
-                        st.text(result["formatted_data"])
+                        st.subheader("Formatted JSON Data")
+                        try:
+                            # Sanitize and load the JSON string for display
+                            json_string = result["formatted_data"]
+                            if json_string.strip().startswith("```json"):
+                                json_string = json_string.strip()[7:-3].strip()
+                            st.json(json.loads(json_string))
+                        except Exception:
+                            st.text("Could not parse formatted data as JSON. Displaying raw string:")
+                            st.text(result["formatted_data"])
                         
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")

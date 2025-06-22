@@ -32,10 +32,9 @@ def load_instructions():
 
 def chat_with_search_node(state: GraphState) -> GraphState:
     """
-    Generate response using LLM with web search results as context.
+    Cleans and formats web search results into structured data using an LLM.
     """
     llm = get_llm()
-    messages = state["messages"]
     search_results = state["search_results"]
     user_query = state["user_query"]
     
@@ -46,20 +45,24 @@ def chat_with_search_node(state: GraphState) -> GraphState:
         search_results=search_results
     )
     
-    # Add the enhanced prompt to messages
-    enhanced_messages = messages + [HumanMessage(content=enhanced_prompt)]
+    # Use a fresh message list for the LLM call to get only the structured data
+    llm_messages = [HumanMessage(content=enhanced_prompt)]
     
-    # Get response from LLM
-    response = llm.invoke(enhanced_messages)
+    # Get response from LLM - this response should be the cleaned data
+    response = llm.invoke(llm_messages)
     
-    logger.info("Generated response with web search context")
+    cleaned_data = str(response.content)
+    logger.info("Cleaned search results into structured data.")
+
+    logger.info(f"Cleaned data: {cleaned_data}")    
     
+    # The cleaned data is the main "response" to the user, and also the formatted data for the graph
     return {
-        "messages": messages + [response],
-        "response": str(response.content),
+        "messages": state["messages"], # Pass original messages through
+        "response": cleaned_data,
         "search_results": search_results,
         "user_query": user_query,
         "selected_graph_type": state.get("selected_graph_type", ""),
-        "formatted_data": state.get("formatted_data", ""),
+        "formatted_data": cleaned_data,
         "graph_object": state.get("graph_object", None)
     } 
