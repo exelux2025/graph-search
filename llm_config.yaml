@@ -1,0 +1,4 @@
+openai:
+  model_id: "gpt-4o"
+  model_kwargs:
+    temperature: 0

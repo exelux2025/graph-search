@@ -1,0 +1,15 @@
+# Core LangChain and OpenAI dependencies
+langchain-openai==0.3.18
+langchain-core>=0.3.61,<1.0.0
+
+# LangGraph for graph-based workflows
+langgraph==0.3.0
+
+# YAML configuration support
+PyYAML==6.0.1
+
+# OpenAI Python client (implicit dependency)
+openai>=1.68.2,<2.0.0
+
+# Environment variable management
+python-dotenv==1.1.0 
