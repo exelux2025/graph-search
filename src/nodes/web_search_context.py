@@ -12,6 +12,9 @@ class GraphState(TypedDict):
     response: Annotated[str, "The response from the LLM"]
     search_results: Annotated[str, "Results from web search"]
     user_query: Annotated[str, "The original user query"]
+    selected_graph_type: Annotated[str, "The selected graph type"]
+    formatted_data: Annotated[str, "The formatted data"]
+    graph_object: Annotated[str, "The graph object"]
 
 
 def load_instructions():
@@ -55,5 +58,8 @@ def chat_with_search_node(state: GraphState) -> GraphState:
         "messages": messages + [response],
         "response": str(response.content),
         "search_results": search_results,
-        "user_query": user_query
+        "user_query": user_query,
+        "selected_graph_type": state.get("selected_graph_type", ""),
+        "formatted_data": state.get("formatted_data", ""),
+        "graph_object": state.get("graph_object", None)
     } 

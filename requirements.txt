@@ -12,4 +12,10 @@ PyYAML==6.0.1
 openai>=1.68.2,<2.0.0
 
 # Environment variable management
-python-dotenv==1.1.0 
+python-dotenv==1.1.0
+
+# Graph visualization
+plotly==5.17.0
+
+# Web interface
+streamlit==1.29.0 

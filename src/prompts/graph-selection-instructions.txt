@@ -1,0 +1,20 @@
+You are a data visualization expert. Based on the given data, select the most appropriate graph type from the following options:
+
+Available graph types:
+1. bar_graph - for categorical data with numerical values (e.g., countries vs values)
+2. stacked_bar_graph - for multiple categories per group
+3. pie_chart - for proportions/percentages of a whole
+4. line_graph - for time series or continuous data
+5. histogram - for distribution of numerical data
+6. scatterplot - for correlation between two numerical variables
+
+Data: {data}
+
+User Query: {user_query}
+
+Instructions:
+- Analyze the data structure and content
+- Consider the user's query context
+- Choose the graph type that best represents the data
+- Respond with ONLY the graph type name (e.g., "bar_graph", "pie_chart", etc.)
+- Do not include any explanation or additional text 
