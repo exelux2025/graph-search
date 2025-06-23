@@ -1,130 +1,145 @@
-import os
-import logging
-import sys
+import streamlit as st
 from dotenv import load_dotenv
-from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
-from langgraph.graph import StateGraph, END
-from typing import TypedDict, Annotated, List
+import json
 
-# Import from our modular structure
-from src.utils import get_llm
-from src.nodes.web_search import web_search_node, GraphState
-from src.nodes.web_search_context import chat_with_search_node
-from src.nodes.simple_chat import chat_node
+# Import logger
+from src.logger import get_logger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
-logger = logging.getLogger(__name__)
+# Import workflows
+from src.workflows.conditional_graph_workflow import create_conditional_graph_workflow, get_initial_state as get_conditional_state
+from src.workflows.web_search_workflow import create_web_search_graph, get_initial_state as get_web_search_state
+from src.workflows.simple_chat_workflow import create_simple_chat_graph, get_initial_state as get_chat_state
 
-# Load environment variables from .env file
+# Get logger
+logger = get_logger(__name__)
+
+# Load environment variables
 load_dotenv()
 
+# Set page config
+st.set_page_config(
+    page_title="Graph Search & Visualization",
+    page_icon="📊",
+    layout="wide"
+)
 
-def create_web_search_graph():
-    """
-    Create a graph that performs web search and then generates a response.
-    """
-    
-    # Create the graph
-    workflow = StateGraph(GraphState)
-    
-    # Add nodes
-    workflow.add_node("web_search", web_search_node)
-    workflow.add_node("chat_with_search", chat_with_search_node)
-    
-    # Set the entry point
-    workflow.set_entry_point("web_search")
-    
-    # Add edges
-    workflow.add_edge("web_search", "chat_with_search")
-    workflow.add_edge("chat_with_search", END)
-    
-    # Compile the graph
-    return workflow.compile()
-
-
-def create_simple_chat_graph():
-    """
-    Create a simple chat graph using LangGraph and our LLM utilities.
-    """
-    
-    # Create the graph
-    workflow = StateGraph(GraphState)
-    
-    # Add the chat node
-    workflow.add_node("chat", chat_node)
-    
-    # Set the entry point
-    workflow.set_entry_point("chat")
-    
-    # Set the end point
-    workflow.add_edge("chat", END)
-    
-    # Compile the graph
-    return workflow.compile()
-
+st.title("📊 Graph Search & Visualization")
+st.markdown("Search for data and automatically generate visualizations!")
 
 def main():
-    """
-    Main function to demonstrate the LLM utilities.
-    """
-    # logger.info("=== LLM Utilities Demo ===")
-    
-    # # Test basic LLM functionality
-    # logger.info("\n1. Testing basic LLM functionality:")
-    # llm = get_llm()
-    
-    # messages = [
-    #     SystemMessage(content="You are a helpful assistant."),
-    #     HumanMessage(content="What is the capital of France?")
-    # ]
-    
-    # response = llm.invoke(messages)
-    # logger.info(f"Response: {response.content}")
-    
-    # # Test LangGraph integration
-    # logger.info("\n2. Testing LangGraph integration:")
-    # graph = create_simple_chat_graph()
-    
-    # # Create initial state
-    # initial_state = {
-    #     "messages": [
-    #         SystemMessage(content="You are a helpful assistant."),
-    #         HumanMessage(content="Tell me a short joke.")
-    #     ],
-    #     "response": "",
-    #     "search_results": "",
-    #     "user_query": ""
-    # }
-    
-    # # Run the graph
-    # result = graph.invoke(initial_state)
-    # logger.info(f"Graph Response: {result['response']}")
-    
-    # # Test web search functionality
-    # logger.info("\n3. Testing web search functionality:")
-    web_search_graph = create_web_search_graph()
-    
-    # Create initial state for web search
-    web_search_state = {
-        "messages": [
-            SystemMessage(content="You are a helpful assistant that provides information based on web search results.")
+    # Workflow selection
+    st.sidebar.header("🔧 Workflow Selection")
+    workflow_type = st.sidebar.selectbox(
+        "Choose a workflow:",
+        [
+            "Conditional Graph Workflow",
+            "Web Search Only",
+            "Simple Chat"
         ],
-        "response": "",
-        "search_results": "",
-        "user_query": "Tell me the top 10 countries by defense budget in USD"
-    }
+        help="Select the type of processing you want to perform"
+    )
     
-    # Run the web search graph
-    web_result = web_search_graph.invoke(web_search_state)
-    logger.info(f"Web Search Response: {web_result['response']}")
+    # Create the appropriate workflow
+    if workflow_type == "Conditional Graph Workflow":
+        graph = create_conditional_graph_workflow()
+        get_state_func = get_conditional_state
+        workflow_description = """
+        **Conditional Graph Workflow**: 
+        - First checks if your query can generate a graph
+        - If yes: performs web search, formats data, selects graph type, and renders visualization
+        - If no: provides a helpful text response asking for a better query
+        - Best for queries that might or might not be suitable for visualization
+        """
+    elif workflow_type == "Web Search Only":
+        graph = create_web_search_graph()
+        get_state_func = get_web_search_state
+        workflow_description = """
+        **Web Search Only**: 
+        - Performs web search for your query
+        - Processes and formats the search results
+        - Provides a text response without graph generation
+        - Best for informational queries that don't need visualization
+        """
+    else:  # Simple Chat
+        graph = create_simple_chat_graph()
+        get_state_func = get_chat_state
+        workflow_description = """
+        **Simple Chat**: 
+        - Provides a basic chat interface
+        - No web search or graph generation
+        - Best for general conversation and questions
+        """
     
-    logger.info("\n=== Demo Complete ===")
-
+    # Display workflow description
+    st.sidebar.markdown(workflow_description)
+    
+    # User input
+    user_query = st.text_input(
+        "Enter your search query:",
+        placeholder="e.g., top 10 countries by defense budget in USD"
+    )
+    
+    if st.button("🔍 Process Query"):
+        if user_query:
+            with st.spinner("Processing your request..."):
+                try:
+                    # Create initial state using the appropriate function
+                    initial_state = get_state_func(user_query)
+                    
+                    # Run the workflow
+                    result = graph.invoke(initial_state)
+                    
+                    # Display results
+                    st.success("✅ Processing complete!")
+                    
+                    # Show the text response
+                    st.subheader("📝 Text Response")
+                    st.write("Retrieved data ✅")
+                    
+                    # Show additional information based on workflow type
+                    if workflow_type == "Conditional Graph Workflow":
+                        # Show classification result
+                        st.subheader("🔍 Query Classification")
+                        classification_status = "✅ Can generate graph" if result["can_generate_graph"] == "Yes" else "❌ Cannot generate graph"
+                        st.info(classification_status)
+                        
+                        # Show graph if it was generated
+                        if result.get("graph_object") and result["can_generate_graph"] == "Yes":
+                            st.subheader("📈 Selected Visualization")
+                            st.info(f"Graph Type: {result['selected_graph_type']}")
+                            
+                            st.subheader("📊 Generated Graph")
+                            st.plotly_chart(result["graph_object"], use_container_width=True)
+                    
+                    elif workflow_type == "Web Search Only":
+                        # Show search results
+                        st.subheader("🔍 Web Search Results")
+                        st.text(result["search_results"])
+                    
+                    # Show raw data for debugging (only for workflows that have it)
+                    if result.get("formatted_data") and workflow_type != "Simple Chat":
+                        with st.expander("🔍 Raw Data"):
+                            if result.get("search_results"):
+                                st.text("Raw Web Search Results:")
+                                st.text(result["search_results"])
+                            
+                            if result.get("formatted_data"):
+                                st.subheader("Formatted JSON Data")
+                                try:
+                                    # Sanitize and load the JSON string for display
+                                    json_string = result["formatted_data"]
+                                    if json_string.strip().startswith("```json"):
+                                        json_string = json_string.strip()[7:-3].strip()
+                                    st.json(json.loads(json_string))
+                                except Exception:
+                                    st.text("Could not parse formatted data as JSON. Displaying raw string:")
+                                    st.text(result["formatted_data"])
+                        
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+                    logger.error(f"Streamlit app error: {e}")
+        else:
+            st.warning("Please enter a search query.")
 
 if __name__ == "__main__":
-    main()
+    main() 

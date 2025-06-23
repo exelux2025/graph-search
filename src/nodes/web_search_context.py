@@ -1,10 +1,10 @@
-import logging
 import os
 from typing import TypedDict, Annotated, List
 from langchain_core.messages import BaseMessage, HumanMessage
 from src.utils import get_llm
+from src.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Define the state for our graph
 class GraphState(TypedDict):
@@ -15,6 +15,7 @@ class GraphState(TypedDict):
     selected_graph_type: Annotated[str, "The selected graph type"]
     formatted_data: Annotated[str, "The formatted data"]
     graph_object: Annotated[str, "The graph object"]
+    can_generate_graph: Annotated[str, "Whether the query can generate a graph (Yes/No)"]
 
 
 def load_instructions():
@@ -64,5 +65,6 @@ def chat_with_search_node(state: GraphState) -> GraphState:
         "user_query": user_query,
         "selected_graph_type": state.get("selected_graph_type", ""),
         "formatted_data": cleaned_data,
-        "graph_object": state.get("graph_object", None)
+        "graph_object": state.get("graph_object", None),
+        "can_generate_graph": state.get("can_generate_graph", "No")
     } 

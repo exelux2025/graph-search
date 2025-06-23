@@ -2,3 +2,8 @@ openai:
   model_id: "gpt-4o"
   model_kwargs:
     temperature: 0
+
+gpt-mini:
+  model_id: "o4-mini-2025-04-16"
+  model_kwargs:
+    temperature: 1
