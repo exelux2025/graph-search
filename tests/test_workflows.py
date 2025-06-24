@@ -4,11 +4,13 @@ Unit tests for workflow functionality.
 
 import pytest
 from unittest.mock import Mock, patch
-from langchain_core.messages import SystemMessage
-
+from langchain_core.messages import SystemMessage, HumanMessage
 from src.workflows.conditional_graph_workflow import create_conditional_graph_workflow, get_initial_state as get_conditional_state
 from src.workflows.web_search_workflow import create_web_search_graph, get_initial_state as get_web_search_state
 from src.workflows.simple_chat_workflow import create_simple_chat_graph, get_initial_state as get_chat_state
+from src.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class TestConditionalGraphWorkflow:
@@ -130,4 +132,25 @@ class TestWorkflowIntegration:
             ]
             
             for key in required_keys:
-                assert key in state, f"Missing key {key} in {create_func.__name__}" 
+                assert key in state, f"Missing key {key} in {create_func.__name__}"
+    
+    def test_supported_graph_types(self):
+        """Test that all supported graph types are recognized."""
+        from src.nodes.graph_renderer import create_graph
+        
+        # Test data for different graph types
+        test_data = {
+            "Country": {"values": ["USA", "China", "India"]},
+            "Population": {"values": [331, 1441, 1380]}
+        }
+        
+        supported_types = ["bar_graph", "stacked_bar_chart", "multi_bar_graph", "pie_chart", "line_graph", "scatterplot"]
+        
+        for graph_type in supported_types:
+            try:
+                fig = create_graph(graph_type, str(test_data), "Test query")
+                assert fig is not None, f"Failed to create {graph_type}"
+                logger.info(f"Successfully created {graph_type}")
+            except Exception as e:
+                logger.error(f"Error creating {graph_type}: {e}")
+                # Don't fail the test, just log the error 

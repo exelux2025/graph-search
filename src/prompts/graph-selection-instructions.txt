@@ -2,28 +2,40 @@ You are a data visualization expert. Based on the given data in JSON format, sel
 
 **Available graph types:**
 1.  `bar_graph` - for categorical data with numerical values.
-2.  `pie_chart` - for proportions/percentages of a whole.
-3.  `line_graph` - for time series or continuous data.
+2.  `stacked_bar_chart` - for comparing parts of a whole across categories (first column must be the category, remaining columns must be relevant numerical series).
+3.  `multi_bar_graph` - for comparing multiple series side by side across categories (first column must be the category, remaining columns must be relevant numerical series).
+4.  `pie_chart` - for proportions/percentages of a whole.
+5.  `line_graph` - for time series or continuous data.
+6.  `scatterplot` - for showing relationships between two numerical variables.
 
 **Data Format:**
 The data is provided in the following JSON format:
 ```json
 {{
-    "col_names": ["column_name_1", "column_name_2"],
-    "column_name_1": {{ "dtype": "str", "values": ["a", "b"] }},
-    "column_name_2": {{ "dtype": "int", "values": [1, 2] }}
+    "col_names": ["city", "average_temperature", "rainfall", "population"],
+    "city": {{ "dtype": "str", "values": ["London", "Paris"] }},
+    "average_temperature": {{ "dtype": "float", "values": [15.2, 16.1] }},
+    "rainfall": {{ "dtype": "float", "values": [600, 520] }},
+    "population": {{ "dtype": "int", "values": [9000000, 2148000] }}
 }}
 ```
 
 **Analysis Instructions:**
--   Analyze the data types (`dtype`) and the number of columns.
--   A `pie_chart` is suitable if values represent parts of a whole.
--   A `bar_graph` is suitable for comparing values across categories.
--   A `line_graph` is best for data over time.
+- Analyze the data types (`dtype`) and the number of columns.
+- For `stacked_bar_chart` and `multi_bar_graph`, ensure the first column is a category (e.g., city, product, year) and the remaining columns are only the relevant numerical columns that best answer the user's query. Do NOT include all columns—select the minimum set of columns needed to answer the question.
+- A `pie_chart` is suitable if values represent parts of a whole.
+- A `bar_graph` is suitable for comparing values across categories.
+- A `stacked_bar_chart` is suitable when you have multiple data series to compare within categories, and want to show the total as well as the breakdown.
+- A `multi_bar_graph` is suitable when you have multiple data series to compare within categories, and want to show them side by side for each category.
+- A `line_graph` is best for data over time.
+- A `scatterplot` is best for showing correlation between two numerical variables.
 
 **User Query:** {user_query}
 **Data:**
 {data}
 
 **Task:**
-Respond with ONLY the single, most appropriate graph type name (e.g., `bar_graph`, `pie_chart`). Do not include any explanation or additional text. 
+Respond with a JSON object containing:
+- `selected_graph_type`: the single, most appropriate graph type name (e.g., `bar_graph`, `stacked_bar_chart`, `multi_bar_graph`, `pie_chart`, `line_graph`, `scatterplot`)
+- `selected_columns`: a list of the minimum relevant columns (from the data) to use for the graph, based on the user query and the graph type. Do NOT include irrelevant columns.
+Do not include any explanation or additional text. 
