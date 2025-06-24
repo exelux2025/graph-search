@@ -1,0 +1,28 @@
+[project]
+name = "graph-search"
+version = "0.1.0"
+description = "Graph search and visualization app with LLM-powered workflows."
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+requires-python = ">=3.9"
+
+[project.dependencies]
+langchain-openai = "0.3.18"
+langchain-core = ">=0.3.61,<1.0.0"
+langgraph = "0.3.0"
+PyYAML = "6.0.1"
+openai = ">=1.68.2,<2.0.0"
+python-dotenv = "1.1.0"
+plotly = "5.17.0"
+streamlit = "1.29.0"
+
+[project.optional-dependencies]
+test = [
+    "pytest==7.4.3",
+    "pytest-cov==4.1.0",
+    "pytest-mock==3.12.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta" 
