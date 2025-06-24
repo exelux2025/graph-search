@@ -104,7 +104,7 @@ pytest tests/test_workflows.py::TestWorkflowIntegration::test_supported_graph_ty
 
 Try queries like:
 
-> Tell me the count of different nuclear warheads and nuclear reactors owned by different countries
+> For any 5 countries tell me the % contribution in GDP of various sectors
 
 ---
 
