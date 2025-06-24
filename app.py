@@ -125,15 +125,16 @@ def main():
                             
                             if result.get("formatted_data"):
                                 st.subheader("Formatted JSON Data")
+                                json_string = result["formatted_data"]
+                                json_string = json_string.strip()
+                                if json_string.startswith("```json"):
+                                    json_string = json_string[7:-3].strip()
                                 try:
-                                    # Sanitize and load the JSON string for display
-                                    json_string = result["formatted_data"]
-                                    if json_string.strip().startswith("```json"):
-                                        json_string = json_string.strip()[7:-3].strip()
                                     st.json(json.loads(json_string))
-                                except Exception:
+                                except Exception as e:
                                     st.text("Could not parse formatted data as JSON. Displaying raw string:")
-                                    st.text(result["formatted_data"])
+                                    st.text(json_string)
+                                    logger.error(f"Streamlit app error: {e}")
                         
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
